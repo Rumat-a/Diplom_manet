@@ -113,7 +113,7 @@ X = np.array(df)
 # print(X)
 
 
-db = DBSCAN(eps=80, metric='euclidean', min_samples=4).fit(X)
+db = DBSCAN(eps=50, metric='euclidean', min_samples=4).fit(X)
 labels = db.labels_
 # labels показывает к какому кластеру был отнесен элемент
 # print(labels)
