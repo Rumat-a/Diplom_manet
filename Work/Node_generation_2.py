@@ -83,6 +83,47 @@ def node_attributes_selection(graph_):
         dict_of_node_attributes['claster_flag'].append(graph.nodes[id_ndoe]['claster_flag'])
     return dict_of_node_attributes
 
+# Функция сортироваки узлов по координате
+def sorting_nodes_by_cooridant():
+    coord_list = ['x', 'y', 'z']
+    nodes_sorted_x = {}
+    nodes_sorted_y = {}
+    nodes_sorted_z = {}
+    list_id_nodes_x = []
+    list_id_nodes_y = []
+    list_id_nodes_z = []
+    for coord in coord_list:
+        # словарь для id узлов и текущей координаты
+        idnodes_coord = {}
+        for index, value in enumerate(dict_of_node_attributes[coord]):
+            idnodes_coord[index] = value
+        # print(idnodes_coord)
+
+        # Словарь отсортированных узлов
+        nodes_sorted_coord = {}
+        # список id узлов для навигации по словарю
+        list_id_nodes_coord = []
+        # Отсортированные ключи словаря
+        sorted_id_ndoes = sorted(idnodes_coord, key=idnodes_coord.get)
+        for key in sorted_id_ndoes:
+            nodes_sorted_coord[key] = idnodes_coord[key]
+            list_id_nodes_coord.append(key)
+        
+        if coord == 'x':
+             nodes_sorted_x = nodes_sorted_coord
+        elif coord == 'y':
+             nodes_sorted_y = nodes_sorted_coord
+        elif coord == 'z':
+             nodes_sorted_z = nodes_sorted_coord
+
+        # Вывод
+        # ig = 0
+        # for key in nodes_sorted_coord:
+        #     print(list_id_nodes_coord[ig])
+        #     print(key, nodes_sorted_coord[key])
+        #     ig = ig + 1
+    return nodes_sorted_x, nodes_sorted_y, nodes_sorted_z, list_id_nodes_x, list_id_nodes_y, list_id_nodes_z
+    
 
 graph = nx.Graph()
 node_generation(graph, number_of_center_nodes, number_of_nodes_in_the_cluster)
@@ -95,34 +136,62 @@ node_generation(graph, number_of_center_nodes, number_of_nodes_in_the_cluster)
 dict_of_node_attributes = node_attributes_selection(graph)
 
 
-# # ____________________Вывод полученых координат_____________________
-# # # вывод элементов словарь атрибутов узлов
-# for key in dict_of_node_attributes:
-#     # print(key)
-#     print(dict_of_node_attributes[key])
+# ____________________Вывод полученых координат______________________
+# print(dict_of_node_attributes)
 
-# # ____________________Отрисока сгенеренных узлов_______________________
-# G = Plot(graph, dict_of_node_attributes)
-# G.plot_graph()
+# __________________Отрисока сгенеренных узлов до обучения алгоса____
+G = Plot(graph, dict_of_node_attributes)
+G.plot_graph()
 
-# ____________________Применяем DBSCAN(есть в отдельном классе)______
+
+# ___________________Подготовка атрибутов узлов для алгоритма________
 df = pd.DataFrame(dict_of_node_attributes)
 # Получилось 272 строки, каждая из которых это узел
 # print(df)
 X = np.array(df)
 # print(X)
 
+# ____________________Нахождение eps_________________________________
+# нахерявсеэтоделал(?
+# Словари с отсоритрованными по координатам узлами и списки id узлов для навигации по словарю 
+# dict_nodes_sorted_x, dict_nodes_sorted_y, dict_nodes_sorted_z, list_id_nodes_x, list_id_nodes_y, list_id_nodes_z  = sorting_nodes_by_cooridant()
+# print(dict_nodes_sorted_x)
 
-db = DBSCAN(eps=50, metric='euclidean', min_samples=4).fit(X)
+# Словарь соседей для каждого узла
+dict_all_node_neighbors = {}
+temporary_nodes_dict = {}
+for node in graph.nodes():
+    temporary_nodes_dict[node] = graph.nodes[node]
+
+visibility = 100
+for node_1 in graph.nodes():
+    for node_2 in temporary_nodes_dict:
+        if node_1 != node_2:
+            if graph.nodes[node_1]['pos'][0] - visibility <= temporary_nodes_dict[node_2]['pos'][0] <= graph.nodes[node_1]['pos'][0] + visibility:
+                if graph.nodes[node_1]['pos'][1] - visibility <= temporary_nodes_dict[node_2]['pos'][1] <= graph.nodes[node_1]['pos'][1] + visibility:
+                    if graph.nodes[node_1]['pos'][2] - visibility <= temporary_nodes_dict[node_2]['pos'][2] <= graph.nodes[node_1]['pos'][2] + visibility:
+                        if node_1 not in dict_all_node_neighbors:
+                            dict_all_node_neighbors[node_1] = {}
+                            dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
+                        else:
+                            dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
+
+
+# print(dict_all_node_neighbors) не выводи это!
+
+
+# ____________________Применяем DBSCAN(есть в отдельном классе)______
+
+db = DBSCAN(eps=80, metric='euclidean', min_samples=4).fit(X)
 labels = db.labels_
 # labels показывает к какому кластеру был отнесен элемент
 # print(labels)
 
 unique, counts = np.unique(db.labels_, return_counts=True)
-print(np.asarray((unique, counts)).T)
+# print(np.asarray((unique, counts)).T)
 
 
-# # ____________________Добавление узлам меток кластера________________
+# # ____________________Добавление узлам меток кластера_______________
 # это показывает как правильно добавить метки кластеров узлам
 # for i in range(5):
 #     print('graph[i]: ', graph.nodes[i], 
@@ -133,6 +202,7 @@ print(np.asarray((unique, counts)).T)
 for id_node, label in enumerate(db.labels_):
     graph.nodes[id_node]['claster_flag'] = label
 
-# # ____________________Отрисока после DBSCAN____________________________
+# # ____________________Отрисока после DBSCAN_________________________
 G_2 = Plot(graph, dict_of_node_attributes)
 G_2.painting_of_clasters(db.labels_)
+
