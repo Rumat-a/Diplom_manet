@@ -140,8 +140,8 @@ dict_of_node_attributes = node_attributes_selection(graph)
 # print(dict_of_node_attributes)
 
 # __________________Отрисока сгенеренных узлов до обучения алгоса____
-G = Plot(graph, dict_of_node_attributes)
-G.plot_graph()
+# G = Plot(graph, dict_of_node_attributes)
+# G.plot_graph()
 
 
 # ___________________Подготовка атрибутов узлов для алгоритма________
@@ -163,7 +163,7 @@ temporary_nodes_dict = {}
 for node in graph.nodes():
     temporary_nodes_dict[node] = graph.nodes[node]
 
-visibility = 100
+visibility = 50
 for node_1 in graph.nodes():
     for node_2 in temporary_nodes_dict:
         if node_1 != node_2:
