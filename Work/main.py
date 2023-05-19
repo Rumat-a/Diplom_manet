@@ -23,20 +23,27 @@ from Plot_ import Plot
 random.seed(8)
 
 number_of_nodes_in_the_cluster = 30             # Число узлов в области
-number_of_center_nodes = 10                     # Число центров областей генерации точек
+# Число центров областей генерации точек
+number_of_center_nodes = 10
 
 
 def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_cluster):
+    'Генерация узлов'
     # Генерация точек центров.
     def generating_center_nodes(graph_, number_of_center_nodes):
+        node_list = []
         for id_node in range(number_of_center_nodes):
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            graph_.add_node(id_node, pos=(x, y, z), claster_flag=-2)
+            # graph_.add_node(id_node, pos=(x, y, z), claster_flag=-2)
+            # graph_.add_node(id_node, {'x': x, 'y': y, 'x': z }, claster_flag=-2)
+            node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -2}))
+        graph_.add_nodes_from(node_list)
+
 
     def generating_the_remaining_nodes(graph_, number_of_center_nodes):
-        pos = nx.get_node_attributes(graph_, 'pos')
+        # pos = nx.get_node_attributes(graph_, 'pos')
         node_list = []
         # id_node - номер узла в графе, задаем с учетом "len(graph_) - 1" тех номеров, что уже есть в графе
         id_node = len(graph_)
@@ -46,24 +53,28 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
             if node <= (number_of_center_nodes * 30 // 100):
                 # Условие на величину кластера. Первые 30% точек/кластеров получают разброс в 165 единиц
                 # и соответсвенно размер кластера 330 единиц
-                for id_node_ in range(number_of_nodes_in_the_cluster):
-                    x, y, z = pos[node]
+                for i in range(number_of_nodes_in_the_cluster):
+                    x = graph_.nodes[node]['x']
+                    y = graph_.nodes[node]['y']
+                    z = graph_.nodes[node]['z']
                     radius_obl = 150
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    node_list.append(
-                        (id_node, {'pos': (x, y, z), 'claster_flag': node}))
+                    # node_list.append((id_node, {'pos': (x, y, z), 'claster_flag': node}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node}))
                     id_node = id_node + 1
             else:
-                for id_node_ in range(number_of_nodes_in_the_cluster):
-                    x, y, z = pos[node]
+                for i in range(number_of_nodes_in_the_cluster):
+                    x = graph_.nodes[node]['x']
+                    y = graph_.nodes[node]['y']
+                    z = graph_.nodes[node]['z']
                     radius_obl = 60
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    node_list.append(
-                        (id_node, {'pos': (x, y, z), 'claster_flag': node}))
+                    # node_list.append((id_node, {'pos': (x, y, z), 'claster_flag': node}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node}))
                     id_node = id_node + 1
         graph_.add_nodes_from(node_list)
 
@@ -75,8 +86,8 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            noice_nodes_list.append(
-                (id_node, {'pos': (x, y, z), 'claster_flag': -1}))
+            # noice_nodes_list.append((id_node, {'pos': (x, y, z), 'claster_flag': -1}))
+            noice_nodes_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -1}))
             id_node = id_node + 1
         graph_.add_nodes_from(noice_nodes_list)
 
@@ -84,15 +95,21 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
     generating_the_remaining_nodes(graph_, number_of_center_nodes)
     generating_noise_nodes(graph_)
 
+
 def node_attributes_selection(graph_, iter_):
-    dict_of_node_attributes_ = {'id_node': [],'x': [], 'y': [], 'z': [], 'claster_flag': []}  # Участвует в отрисовке!!!
+    'Создание списка атрибутов узла'
+
+    dict_of_node_attributes_ = {'id_node': [], 'x': [], 'y': [], 'z': [
+    ], 'claster_flag': []}  # Участвует в отрисовке!!!
+
     def set_attr_node():
         dict_of_node_attributes_['id_node'].append(id_node)
-        dict_of_node_attributes_['x'].append(graph_.nodes[id_node]['pos'][0])
-        dict_of_node_attributes_['y'].append(graph_.nodes[id_node]['pos'][1])
-        dict_of_node_attributes_['z'].append(graph_.nodes[id_node]['pos'][2])
-        dict_of_node_attributes_['claster_flag'].append(graph_.nodes[id_node]['claster_flag'])
-                
+        dict_of_node_attributes_['x'].append(graph_.nodes[id_node]['x'])
+        dict_of_node_attributes_['y'].append(graph_.nodes[id_node]['y'])
+        dict_of_node_attributes_['z'].append(graph_.nodes[id_node]['z'])
+        dict_of_node_attributes_['claster_flag'].append(
+            graph_.nodes[id_node]['claster_flag'])
+
     if iter_ == 0:
         for id_node in graph_.nodes():
             set_attr_node()
@@ -102,49 +119,12 @@ def node_attributes_selection(graph_, iter_):
                 set_attr_node()
     return dict_of_node_attributes_
 
-# Функция сортироваки узлов по координате
-def sorting_nodes_by_cooridant():
-    coord_list = ['x', 'y', 'z']
-    nodes_sorted_x = {}
-    nodes_sorted_y = {}
-    nodes_sorted_z = {}
-    list_id_nodes_x = []
-    list_id_nodes_y = []
-    list_id_nodes_z = []
-    for coord in coord_list:
-        # словарь для id узлов и текущей координаты
-        idnodes_coord = {}
-        for index, value in enumerate(dict_of_node_attributes[coord]):
-            idnodes_coord[index] = value
-        # print(idnodes_coord)
-
-        # Словарь отсортированных узлов
-        nodes_sorted_coord = {}
-        # список id узлов для навигации по словарю
-        list_id_nodes_coord = []
-        # Отсортированные ключи словаря
-        sorted_id_ndoes = sorted(idnodes_coord, key=idnodes_coord.get)
-        for key in sorted_id_ndoes:
-            nodes_sorted_coord[key] = idnodes_coord[key]
-            list_id_nodes_coord.append(key)
-
-        if coord == 'x':
-            nodes_sorted_x = nodes_sorted_coord
-        elif coord == 'y':
-            nodes_sorted_y = nodes_sorted_coord
-        elif coord == 'z':
-            nodes_sorted_z = nodes_sorted_coord
-
-        # Вывод
-        # ig = 0
-        # for key in nodes_sorted_coord:
-        #     print(list_id_nodes_coord[ig])
-        #     print(key, nodes_sorted_coord[key])
-        #     ig = ig + 1
-    return nodes_sorted_x, nodes_sorted_y, nodes_sorted_z, list_id_nodes_x, list_id_nodes_y, list_id_nodes_z
 
 def learndb(nparr_atr_nodes, eps_, min_samples_, iter_):
-    db = DBSCAN(eps=eps_, metric='euclidean', min_samples=min_samples_).fit(nparr_atr_nodes)
+    'Обучение db'
+
+    db = DBSCAN(eps=eps_, metric='euclidean',
+                min_samples=min_samples_).fit(nparr_atr_nodes)
 
     # labels = db.labels_
     # print(labels)        # labels показывает к какому кластеру был отнесен элемент
@@ -156,169 +136,208 @@ def learndb(nparr_atr_nodes, eps_, min_samples_, iter_):
     return db, iter_
 
 
+def shift_coord(graph_):
+    'Движение узлов'
+
+    for node in graph_.nodes():
+        graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-50, 50)
+        graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-50, 50)
+        graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-50, 50)
+
+
+def finding_neighbors_of_nodes(graph_, visibility):
+    'Нахождение соседей для каждого узла'
+
+    dict_all_node_neighbors = {}
+    temporary_nodes_dict = {}
+    for node in graph_.nodes():
+        temporary_nodes_dict[node] = graph_.nodes[node]
+
+    # vis - Область видимости в пределах которой находятся соседи
+    vis = visibility
+    for node_1 in graph_.nodes():
+        for node_2 in temporary_nodes_dict:
+            if node_1 != node_2:
+                if graph_.nodes[node_1]['x'] - vis <= temporary_nodes_dict[node_2]['x'] <= graph_.nodes[node_1]['x'] + vis:
+                    if graph_.nodes[node_1]['y'] - vis <= temporary_nodes_dict[node_2]['y'] <= graph_.nodes[node_1]['y'] + vis:
+                        if graph_.nodes[node_1]['z'] - vis <= temporary_nodes_dict[node_2]['z'] <= graph_.nodes[node_1]['z'] + vis:
+                            if node_1 not in dict_all_node_neighbors:
+                                dict_all_node_neighbors[node_1] = {}
+                                dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
+                            else:
+                                dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
+    # print(dict_all_node_neighbors) не выводи это!
+
+    return dict_all_node_neighbors
+
+
+def сalculating_average_distances(graph_, dict_all_node_neighbors_):
+    'Рассчет расстояния соседства'
+
+    R_nodes_ = {}
+    for node_osn in dict_all_node_neighbors_:
+        ro_rast = 0
+        list_rast = []
+        for node_neigh in dict_all_node_neighbors_[node_osn]:
+            rast = math.sqrt((graph_.nodes[node_osn]['x'] - dict_all_node_neighbors_[node_osn][node_neigh]['x'])**2 +
+                             (graph_.nodes[node_osn]['y'] - dict_all_node_neighbors_[node_osn][node_neigh]['y'])**2 +
+                             (graph_.nodes[node_osn]['z'] - dict_all_node_neighbors_[node_osn][node_neigh]['z'])**2)
+            # print(rast)
+            list_rast.append(rast)
+        list_rast_sort = sorted(list_rast)
+        list_5_neigh = list_rast_sort[:5]
+        sum_5_neigh = sum(list_5_neigh)
+        ro_rast = sum_5_neigh/5
+        R_nodes_[node_osn] = ro_rast
+
+    sns.displot(R_nodes_, bins=50)
+    plt.title('Плотность расположения узлов в сети')
+    plt.xlabel('Среднее расстояние соседства узлов')
+    plt.ylabel('Количество узлов')
+    plt.show()
+
+    return R_nodes_
+
+
+def sorting_and_creating_a_list_of_distances_R(R_nodes_):
+    'Сортировка и создание списка расстояний R'
+
+    list_R = []
+    for i in R_nodes_:
+        list_R.append(R_nodes_[i])
+    list_R = sorted(list_R)
+
+    # Подсчет плотности_______
+    epsilon = (max(list_R) - min(list_R))/50
+    # print(max(list_R), min(list_R), epsilon)
+
+    density_R = {}
+    for delt_a in range(len(list_R)):
+        sum_dens = 0
+        for qwe_R in list_R:
+            if list_R[delt_a] - epsilon <= qwe_R <= list_R[delt_a] + epsilon:
+                sum_dens = sum_dens + 1
+            elif qwe_R < list_R[delt_a] - epsilon:
+                continue
+            else:
+                break
+        density_R[list_R[delt_a]] = sum_dens
+
+    list_density_R = []
+    for key in density_R:
+        list_density_R.append(density_R[key])
+
+    iqq = [i for i in range(len(list_density_R))]
+    # plt.plot(iqq, list_density_R)
+    # plt.title('Плотность расположения узлов в сети')
+    # plt.xlabel('Среднее расстояние соседства узлов')
+    # plt.ylabel('Количество узлов')
+    # plt.show()
+
 
 # __________Создание объекта граф______________________________________
-graph_ = nx.Graph()
-node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_cluster)
+graph = nx.Graph()
+node_generation(graph, number_of_center_nodes, number_of_nodes_in_the_cluster)
 
 # print('Число узлов - ', len(graph_.nodes))
 # print(graph_.nodes.data())
-print('Количество узлов - ',len(graph_.nodes))
+print('Количество узлов - ', len(graph.nodes))
 
-# _____Создание словаря атрибутов узлов(содержит только координаты)______
-iter_ = 0  # Число обучений алгоритма db
-dict_of_node_attributes = node_attributes_selection(graph_,iter_)
+# ____________________Запуск модели______________________
+# Количество изменений координат узлов
+steps = 3
+while steps != 0:
+    # _____Создание словаря атрибутов узлов(содержит только координаты)______
+    iter_ = 0  # Число обучений алгоритма db
+    dict_of_node_attributes = node_attributes_selection(graph, iter_)
 
-# Вывод полученых координат
-# print(dict_of_node_attributes)
+    # Вывод полученых координат
+    # print(dict_of_node_attributes)
 
-# ____________Отрисока сгенеренных узлов до обучения алгоса______________
-G = Plot(dict_of_node_attributes)
-# G.plot_graph()
+    # ____________Отрисока сгенеренных узлов до обучения алгоса______________
+    # G = Plot(dict_of_node_attributes)
+    # G.plot_graph()
 
-# ____________________Нахождение eps______________________________________
-# нахерявсеэтоделал(?
-# Словари с отсоритрованными по координатам узлами и списки id узлов для навигации по словарю
-# dict_nodes_sorted_x, dict_nodes_sorted_y, dict_nodes_sorted_z, list_id_nodes_x, list_id_nodes_y, list_id_nodes_z  = sorting_nodes_by_cooridant()
-# print(dict_nodes_sorted_x)
+    # ____________________Нахождение eps______________________________________
+    # Словарь соседей для каждого узла
+    dict_all_node_neighbors = finding_neighbors_of_nodes(
+        graph, visibility=200)
 
-# Словарь соседей для каждого узла
-dict_all_node_neighbors = {}
-temporary_nodes_dict = {}
-for node in graph_.nodes():
-    temporary_nodes_dict[node] = graph_.nodes[node]
+    # #__________Подсчет средних расстояний________________
+    R_nodes = сalculating_average_distances(graph, dict_all_node_neighbors)
 
-visibility = 200
-for node_1 in graph_.nodes():
-    for node_2 in temporary_nodes_dict:
-        if node_1 != node_2:
-            if graph_.nodes[node_1]['pos'][0] - visibility <= temporary_nodes_dict[node_2]['pos'][0] <= graph_.nodes[node_1]['pos'][0] + visibility:
-                if graph_.nodes[node_1]['pos'][1] - visibility <= temporary_nodes_dict[node_2]['pos'][1] <= graph_.nodes[node_1]['pos'][1] + visibility:
-                    if graph_.nodes[node_1]['pos'][2] - visibility <= temporary_nodes_dict[node_2]['pos'][2] <= graph_.nodes[node_1]['pos'][2] + visibility:
-                        if node_1 not in dict_all_node_neighbors:
-                            dict_all_node_neighbors[node_1] = {}
-                            dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
-                        else:
-                            dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
-# print(dict_all_node_neighbors) не выводи это!
+    # ____Вычисление eps по плотности узлов_____
+    # Сортировка и создание списка расстояний R
+    sorting_and_creating_a_list_of_distances_R(R_nodes)
 
-# #__________Подсчет средних рассточний________________
-R_nodes = {}
-for node_osn in dict_all_node_neighbors:
-    ro_rast = 0
-    list_rast = []
-    for node_neigh in dict_all_node_neighbors[node_osn]:
-        rast = math.sqrt((graph_.nodes[node_osn]['pos'][0] - dict_all_node_neighbors[node_osn][node_neigh]['pos'][0])**2 +
-                         (graph_.nodes[node_osn]['pos'][1] - dict_all_node_neighbors[node_osn][node_neigh]['pos'][1])**2 + 
-                         (graph_.nodes[node_osn]['pos'][2] - dict_all_node_neighbors[node_osn][node_neigh]['pos'][2])**2)
-        # print(rast)
-        list_rast.append(rast)
-    list_rast_sort = sorted(list_rast)
-    list_5_neigh = list_rast_sort[:5]
-    sum_5_neigh = sum(list_5_neigh)
-    ro_rast = sum_5_neigh/5
-    R_nodes[node_osn] = ro_rast
+    # ____________________Применяем DBSCAN___________________________________________________
+    # _________Подготовка атрибутов узлов для алгоритма___________
+    df = pd.DataFrame(dict_of_node_attributes)
+    # print(df)
+    nparr_atr_nodes = np.array(df)
+    # print(nparr_atr_nodes)
 
+    # ________обучение ____________
+    db_1, iter_ = learndb(nparr_atr_nodes, eps_=60,
+                          min_samples_=5, iter_=iter_)
+    count_of_cluster = len(set(db_1.labels_)) - 1
+    # print(count_of_cluster)
+    # print(db_1.labels_)
 
-# sns.displot(R_nodes, bins=50)
-# plt.title('Плотность расположения узлов в сети')
-# plt.xlabel('Среднее расстояние соседства узлов')
-# plt.ylabel('Количество узлов')
-# plt.show()
+    # ________________Отрисовка результатов первого прохода db___________
+    # G_12 = Plot(dict_of_node_attributes)
+    # G_12.painting_of_clasters(db_1.labels_)
 
-# ____Вычисление eps по плотности узлов "гистограмма выше"_____
-# Сортировка и создание списка расстояний R
-list_R = []
-for i in R_nodes:
-    list_R.append(R_nodes[i])
-list_R = sorted(list_R)
+    # _____________Добавление узлам меток кластера_______________
+    for id_node, label in enumerate(db_1.labels_):
+        graph.nodes[id_node]['claster_flag'] = label
 
-# Подсчет плотности_______
-epsilon = (max(list_R) - min(list_R))/50
-# print(max(list_R), min(list_R), epsilon)
-density_R = {}
-for delt_a in range(len(list_R)):
-    sum_dens = 0
-    for qwe_R in list_R:
-        if list_R[delt_a] - epsilon <= qwe_R <= list_R[delt_a] + epsilon:
-            sum_dens = sum_dens + 1
-        elif qwe_R < list_R[delt_a] - epsilon:
-            continue
-        else: 
-            break
-    density_R[list_R[delt_a]] = sum_dens
+    # _________Подготовка атрибутов узлов для алгоритма_2___________
 
-list_density_R = []
-for key in density_R:
-    list_density_R.append(density_R[key])
+    dict_of_node_attributes_2 = node_attributes_selection(graph, iter_)
+    df_2 = pd.DataFrame(dict_of_node_attributes_2)
+    # print(df_2)
+    nparr_atr_nodes_2 = np.array(df_2)
+    # print(nparr_atr_nodes_2)
 
-iqq = [i for i in range(len(list_density_R))]
-# plt.plot(iqq, list_density_R)
-# plt.title('Плотность расположения узлов в сети')
-# plt.xlabel('Среднее расстояние соседства узлов')
-# plt.ylabel('Количество узлов')
-# plt.show()
+    # ________обучение ____________
+    db_2, iter_ = learndb(nparr_atr_nodes_2, eps_=120,
+                          min_samples_=5, iter_=iter_)
 
-# ____________________Применяем DBSCAN___________________________________________________
-# _________Подготовка атрибутов узлов для алгоритма___________
-df = pd.DataFrame(dict_of_node_attributes)
-# print(df)
-nparr_atr_nodes = np.array(df)
-# print(nparr_atr_nodes)
+    # _____________Отрисовка результатов второго прохода db_____
+    # G_22 = Plot(dict_of_node_attributes_2)
+    # G_22.painting_of_clasters(db_2.labels_)
 
+    # _____________Добавление узлам меток кластера_______________
+    for id_node, label in enumerate(db_2.labels_):
+        if label != -1:
+            graph.nodes[dict_of_node_attributes_2['id_node']
+                         [id_node]]['claster_flag'] = label + count_of_cluster
+        else:
+            graph.nodes[dict_of_node_attributes_2['id_node']
+                         [id_node]]['claster_flag'] = label
 
-# ________обучение ____________
-db_1, iter_ = learndb(nparr_atr_nodes, eps_=60, min_samples_=5, iter_=iter_)
-count_of_cluster = len(set(db_1.labels_)) - 1
-# print(count_of_cluster)
-# print(db_1.labels_)
+    iter_ = 0  # Закончили обучать db, обнулим iter_, чтобы отрисовывать можео было все точки
 
-# # ________________Отрисовка результатов первого прохода db___________
-# G_12 = Plot(dict_of_node_attributes)
-# G_12.painting_of_clasters(db_1.labels_)
+    # shift_coord(graph)
 
-# _____________Добавление узлам меток кластера_______________
-for id_node, label in enumerate(db_1.labels_):
-    graph_.nodes[id_node]['claster_flag'] = label
+    #____________График распределения кластеров после обучения DBSCAN__________________
+    dict_of_node_attributes_3 = node_attributes_selection(graph, iter_)
+    df_plt = pd.DataFrame(dict_of_node_attributes_3)
+    unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
+    # plt.bar(unique, counts)
+    # plt.title('Распределение узлов по кластерам')
+    # plt.grid()
+    # plt.show()
 
-# _________Подготовка атрибутов узлов для алгоритма_2___________
+    unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
+    print(np.asarray((unique, counts)).T) # Вывод матрицы кластеров/элементов
 
-dict_of_node_attributes_2 = node_attributes_selection(graph_, iter_)
-df_2 = pd.DataFrame(dict_of_node_attributes_2)
-# print(df_2)
-nparr_atr_nodes_2 = np.array(df_2)
-# print(nparr_atr_nodes_2)
+    shift_coord(graph)
 
-# ________обучение ____________
-db_2, iter_ = learndb(nparr_atr_nodes_2, eps_=120, min_samples_=5, iter_=iter_)
-
-# # _____________Отрисовка результатов второго прохода db_____
-# G_22 = Plot(dict_of_node_attributes_2)
-# G_22.painting_of_clasters(db_2.labels_)
-
-# _____________Добавление узлам меток кластера_______________
-for id_node, label in enumerate(db_2.labels_):
-    if label != -1:
-        graph_.nodes[dict_of_node_attributes_2['id_node'][id_node]]['claster_flag'] = label + count_of_cluster
-    else:
-        graph_.nodes[dict_of_node_attributes_2['id_node'][id_node]]['claster_flag'] = label
-
-iter_ = 0 # Закончили обучать db, обнулим iter_, чтобы отрисовывать можео было все точки
-
-# #____________График распределения кластеров после обучения DBSCAN__________________
-dict_of_node_attributes_3 = node_attributes_selection(graph_, iter_)
-df_plt = pd.DataFrame(dict_of_node_attributes_3)
-unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
-plt.bar(unique, counts)
-plt.title('Распределение узлов по кластерам')
-plt.grid()
-plt.show()
-
-# unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
-# print(np.asarray((unique, counts)).T) # Вывод матрицы кластеров/элементов
-
+    steps = steps - 1
 # # ____________________Отрисока после DBSCAN_________________________
-G_2 = Plot(dict_of_node_attributes_3)
+# G_2 = Plot(dict_of_node_attributes)
 
 # G.plot_graph()
 # G_2.painting_of_clasters(dict_of_node_attributes['claster_flag'])
