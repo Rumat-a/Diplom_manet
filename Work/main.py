@@ -27,19 +27,20 @@ number_of_nodes_in_the_cluster = 30             # Число узлов в об�
 number_of_center_nodes = 10
 
 
-def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_cluster):
+def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_cluster, default_center_graphs_):
     'Генерация узлов'
     # Генерация точек центров.
     def generating_center_nodes(graph_, number_of_center_nodes):
         node_list = []
+        default_center_graphs_list = []
         for id_node in range(number_of_center_nodes):
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            # graph_.add_node(id_node, pos=(x, y, z), claster_flag=-2)
-            # graph_.add_node(id_node, {'x': x, 'y': y, 'x': z }, claster_flag=-2)
-            node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -2}))
+            node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node}))
+            default_center_graphs_[id_node] = {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node}
         graph_.add_nodes_from(node_list)
+
 
 
     def generating_the_remaining_nodes(graph_, number_of_center_nodes):
@@ -47,7 +48,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
         node_list = []
         # id_node - номер узла в графе, задаем с учетом "len(graph_) - 1" тех номеров, что уже есть в графе
         id_node = len(graph_)
-        # Перебор центровых/графовых точек
+        # Перебор корневых/графовых точек
         for node in graph_.nodes():
             # Генерация узлов вокруг центральной точки
             if node <= (number_of_center_nodes * 30 // 100):
@@ -61,8 +62,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    # node_list.append((id_node, {'pos': (x, y, z), 'claster_flag': node}))
-                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl}))
                     id_node = id_node + 1
             else:
                 for i in range(number_of_nodes_in_the_cluster):
@@ -73,8 +73,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    # node_list.append((id_node, {'pos': (x, y, z), 'claster_flag': node}))
-                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl}))
                     id_node = id_node + 1
         graph_.add_nodes_from(node_list)
 
@@ -86,8 +85,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            # noice_nodes_list.append((id_node, {'pos': (x, y, z), 'claster_flag': -1}))
-            noice_nodes_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -1}))
+            noice_nodes_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -1, 'role': 'noiz', 'default_space': -1}))
             id_node = id_node + 1
         graph_.add_nodes_from(noice_nodes_list)
 
@@ -136,13 +134,72 @@ def learndb(nparr_atr_nodes, eps_, min_samples_, iter_):
     return db, iter_
 
 
-def shift_coord(graph_):
+# def shift_coord(graph_, default_center_graphs_):
+#     'Движение узлов'
+
+#     for node in graph_.nodes():
+#         shift = 50
+#         graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
+#         graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
+#         graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)   
+
+
+def shift_coord(graph_, default_center_graphs_):
     'Движение узлов'
 
     for node in graph_.nodes():
-        graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-50, 50)
-        graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-50, 50)
-        graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-50, 50)
+        shift = 80
+        if graph.nodes[node]['role'] == 'noiz':
+
+            X_def = graph_.nodes[node]['x']
+            graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
+            if 0 > graph_.nodes[node]['x'] or graph_.nodes[node]['x'] > 1000:
+                while 0 > graph_.nodes[node]['x'] or graph_.nodes[node]['x'] > 1000:
+                    graph_.nodes[node]['x'] = X_def
+                    graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
+            
+            Y_def = graph_.nodes[node]['y']
+            graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
+            if 0 > graph_.nodes[node]['y'] or graph_.nodes[node]['y'] > 1000:
+                while 0 > graph_.nodes[node]['y'] or graph_.nodes[node]['y'] > 1000:
+                    graph_.nodes[node]['y'] = Y_def
+                    graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
+
+            Z_def = graph_.nodes[node]['z']
+            graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)
+            if 0 > graph_.nodes[node]['z'] or graph_.nodes[node]['z'] > 1000:
+                while 0 > graph_.nodes[node]['z'] or graph_.nodes[node]['z'] > 1000:
+                    graph_.nodes[node]['z'] = Z_def
+                    graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)
+        
+        else:
+            default_space = graph.nodes[node]['default_space']
+            if graph.nodes[node]['role'] == 'node':
+                
+                # Генерация координат в области кластера
+                X_def = graph_.nodes[node]['x']
+                graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
+                a = default_center_graphs_[default_space]['x']
+                b = graph_.nodes[node]['radius_obl']
+                c = graph_.nodes[node]['x']
+                if a - b > c or c > a + b:
+                    while default_center_graphs_[default_space]['x'] - graph_.nodes[node]['radius_obl'] > graph_.nodes[node]['x'] or graph_.nodes[node]['x'] > default_center_graphs_[default_space]['x'] + graph_.nodes[node]['radius_obl']:
+                        graph_.nodes[node]['x'] = X_def
+                        graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
+
+                Y_def = graph_.nodes[node]['y']
+                graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
+                if default_center_graphs_[default_space]['y'] - graph_.nodes[node]['radius_obl'] > graph_.nodes[node]['y'] or graph_.nodes[node]['y'] > default_center_graphs_[default_space]['y'] + graph_.nodes[node]['radius_obl']:
+                    while default_center_graphs_[default_space]['y'] - graph_.nodes[node]['radius_obl'] > graph_.nodes[node]['y'] or graph_.nodes[node]['y'] > default_center_graphs_[default_space]['y'] + graph_.nodes[node]['radius_obl']:
+                        graph_.nodes[node]['y'] = Y_def
+                        graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
+                
+                Z_def = graph_.nodes[node]['z']
+                graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)
+                if default_center_graphs_[default_space]['z'] - graph_.nodes[node]['radius_obl'] > graph_.nodes[node]['z'] or graph_.nodes[node]['z'] > default_center_graphs_[default_space]['z'] + graph_.nodes[node]['radius_obl']:
+                    while default_center_graphs_[default_space]['z'] - graph_.nodes[node]['radius_obl'] > graph_.nodes[node]['z'] or graph_.nodes[node]['z'] > default_center_graphs_[default_space]['z'] + graph_.nodes[node]['radius_obl']:
+                        graph_.nodes[node]['z'] = Z_def
+                        graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)                
 
 
 def finding_neighbors_of_nodes(graph_, visibility):
@@ -171,7 +228,7 @@ def finding_neighbors_of_nodes(graph_, visibility):
     return dict_all_node_neighbors
 
 
-def сalculating_average_distances(graph_, dict_all_node_neighbors_):
+def сalculating_average_distances(graph_, dict_all_node_neighbors_, steps_):
     'Рассчет расстояния соседства'
 
     R_nodes_ = {}
@@ -190,11 +247,18 @@ def сalculating_average_distances(graph_, dict_all_node_neighbors_):
         ro_rast = sum_5_neigh/5
         R_nodes_[node_osn] = ro_rast
 
+    # if steps == 1:
+    #     sns.displot(R_nodes_, bins=50)
+    #     plt.title('Плотность расположения узлов в сети')
+    #     plt.xlabel('Среднее расстояние соседства узлов')
+    #     plt.ylabel('Количество узлов')
+    #     plt.show()
     sns.displot(R_nodes_, bins=50)
     plt.title('Плотность расположения узлов в сети')
     plt.xlabel('Среднее расстояние соседства узлов')
     plt.ylabel('Количество узлов')
     plt.show()
+
 
     return R_nodes_
 
@@ -237,7 +301,9 @@ def sorting_and_creating_a_list_of_distances_R(R_nodes_):
 
 # __________Создание объекта граф______________________________________
 graph = nx.Graph()
-node_generation(graph, number_of_center_nodes, number_of_nodes_in_the_cluster)
+# координаты центров кластеров
+default_center_graphs = {}
+node_generation(graph, number_of_center_nodes, number_of_nodes_in_the_cluster, default_center_graphs)
 
 # print('Число узлов - ', len(graph_.nodes))
 # print(graph_.nodes.data())
@@ -245,8 +311,9 @@ print('Количество узлов - ', len(graph.nodes))
 
 # ____________________Запуск модели______________________
 # Количество изменений координат узлов
-steps = 3
+steps = 100
 while steps != 0:
+    print('steps - ', steps)
     # _____Создание словаря атрибутов узлов(содержит только координаты)______
     iter_ = 0  # Число обучений алгоритма db
     dict_of_node_attributes = node_attributes_selection(graph, iter_)
@@ -264,7 +331,7 @@ while steps != 0:
         graph, visibility=200)
 
     # #__________Подсчет средних расстояний________________
-    R_nodes = сalculating_average_distances(graph, dict_all_node_neighbors)
+    R_nodes = сalculating_average_distances(graph, dict_all_node_neighbors, steps)
 
     # ____Вычисление eps по плотности узлов_____
     # Сортировка и создание списка расстояний R
@@ -330,14 +397,16 @@ while steps != 0:
     # plt.grid()
     # plt.show()
 
-    unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
-    print(np.asarray((unique, counts)).T) # Вывод матрицы кластеров/элементов
+    # unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
+    # print(np.asarray((unique, counts)).T) # Вывод матрицы кластеров/элементов
 
-    shift_coord(graph)
+
+    # if steps == 1:
+    #     G_2 = Plot(dict_of_node_attributes_3)
+    #     G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
+    G_2 = Plot(dict_of_node_attributes_3)
+    G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
+
+    shift_coord(graph, default_center_graphs)
 
     steps = steps - 1
-# # ____________________Отрисока после DBSCAN_________________________
-# G_2 = Plot(dict_of_node_attributes)
-
-# G.plot_graph()
-# G_2.painting_of_clasters(dict_of_node_attributes['claster_flag'])
