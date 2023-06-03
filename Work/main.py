@@ -22,9 +22,15 @@ from Plot_ import Plot
 # 8 - хорошая, есть мелкий в большом остальные на расстоянии{Шикарный сид для кластеризации при eps-(50)(100) min_pts-4 и }
 random.seed(8)
 
-number_of_nodes_in_the_cluster = 30             # Число узлов в области
+# Число узлов в области
+number_of_nodes_in_the_cluster = 30             
 # Число центров областей генерации точек
 number_of_center_nodes = 10
+# Область видимости узла 
+visibility = 200
+# Пропускная способность ребра (канала связи между узлами) bandwigth (mb/c)
+bw = 100
+
 
 
 def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_cluster, default_center_graphs_):
@@ -97,8 +103,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
 def node_attributes_selection(graph_, iter_):
     'Создание списка атрибутов узла'
 
-    dict_of_node_attributes_ = {'id_node': [], 'x': [], 'y': [], 'z': [
-    ], 'claster_flag': []}  # Участвует в отрисовке!!!
+    dict_of_node_attributes_ = {'id_node': [], 'x': [], 'y': [], 'z': [], 'claster_flag': []}  # Участвует в отрисовке!!!
 
     def set_attr_node():
         dict_of_node_attributes_['id_node'].append(id_node)
@@ -132,17 +137,7 @@ def learndb(nparr_atr_nodes, eps_, min_samples_, iter_):
 
     iter_ = iter_ + 1
     return db, iter_
-
-
-# def shift_coord(graph_, default_center_graphs_):
-#     'Движение узлов'
-
-#     for node in graph_.nodes():
-#         shift = 50
-#         graph_.nodes[node]['x'] = graph_.nodes[node]['x'] + random.uniform(-shift, shift)
-#         graph_.nodes[node]['y'] = graph_.nodes[node]['y'] + random.uniform(-shift, shift)
-#         graph_.nodes[node]['z'] = graph_.nodes[node]['z'] + random.uniform(-shift, shift)   
-
+  
 
 def shift_coord(graph_, default_center_graphs_):
     'Движение узлов'
@@ -215,9 +210,9 @@ def finding_neighbors_of_nodes(graph_, visibility):
     for node_1 in graph_.nodes():
         for node_2 in temporary_nodes_dict:
             if node_1 != node_2:
-                if graph_.nodes[node_1]['x'] - vis <= temporary_nodes_dict[node_2]['x'] <= graph_.nodes[node_1]['x'] + vis:
-                    if graph_.nodes[node_1]['y'] - vis <= temporary_nodes_dict[node_2]['y'] <= graph_.nodes[node_1]['y'] + vis:
-                        if graph_.nodes[node_1]['z'] - vis <= temporary_nodes_dict[node_2]['z'] <= graph_.nodes[node_1]['z'] + vis:
+                if graph_.nodes[node_1]['x'] - vis < temporary_nodes_dict[node_2]['x'] < graph_.nodes[node_1]['x'] + vis:
+                    if graph_.nodes[node_1]['y'] - vis < temporary_nodes_dict[node_2]['y'] < graph_.nodes[node_1]['y'] + vis:
+                        if graph_.nodes[node_1]['z'] - vis < temporary_nodes_dict[node_2]['z'] < graph_.nodes[node_1]['z'] + vis:
                             if node_1 not in dict_all_node_neighbors:
                                 dict_all_node_neighbors[node_1] = {}
                                 dict_all_node_neighbors[node_1][node_2] = temporary_nodes_dict[node_2]
@@ -226,6 +221,32 @@ def finding_neighbors_of_nodes(graph_, visibility):
     # print(dict_all_node_neighbors) не выводи это!
 
     return dict_all_node_neighbors
+
+
+def edge_generation(graph, dict_all_node_neighbors_, bw_, visibility_):
+    'Добавление ребер между узлами'
+
+    for target_node in dict_all_node_neighbors_:
+        for neighbor_node in dict_all_node_neighbors_[target_node]:
+            # Если узлы принадлежат одному кластеру
+            if graph.nodes[target_node]['claster_flag'] == graph.nodes[neighbor_node]['claster_flag']:
+                # Если такого ребра еще нет в графе 
+                if graph.has_edge(target_node, neighbor_node) == False and graph.has_edge(neighbor_node, target_node) == False:
+                    # расстояние между узлами
+                    rast = math.sqrt((graph.nodes[target_node]['x'] - dict_all_node_neighbors_[target_node][neighbor_node]['x'])**2 + 
+                                    (graph.nodes[target_node]['y'] - dict_all_node_neighbors_[target_node][neighbor_node]['y'])**2 +
+                                    (graph.nodes[target_node]['z'] - dict_all_node_neighbors_[target_node][neighbor_node]['z'])**2)
+                    # пропускная способность канала между узлами с учетом расстояния между ними
+                    # ГДЕ УТЕЧКА!? rast НЕ ДОЛЖЕН ПРИВЫШАТЬ 100!
+                    bw_rast = bw_ * (rast/(visibility_ * math.sqrt(2) * 1.1))
+
+                    graph.add_edge(target_node, neighbor_node, weight=bw_rast)
+    
+    # Проверка на утечку
+    # for n, nbrs in graph.adj.items():
+    #     for nbr, eattr_ in nbrs.items():
+    #         if eattr_['weight'] >= 100:
+    #             print(n, nbr, eattr_['weight'])
 
 
 def сalculating_average_distances(graph_, dict_all_node_neighbors_, steps_):
@@ -253,11 +274,11 @@ def сalculating_average_distances(graph_, dict_all_node_neighbors_, steps_):
     #     plt.xlabel('Среднее расстояние соседства узлов')
     #     plt.ylabel('Количество узлов')
     #     plt.show()
-    sns.displot(R_nodes_, bins=50)
-    plt.title('Плотность расположения узлов в сети')
-    plt.xlabel('Среднее расстояние соседства узлов')
-    plt.ylabel('Количество узлов')
-    plt.show()
+    # sns.displot(R_nodes_, bins=50)
+    # plt.title('Плотность расположения узлов в сети')
+    # plt.xlabel('Среднее расстояние соседства узлов')
+    # plt.ylabel('Количество узлов')
+    # plt.show()
 
 
     return R_nodes_
@@ -299,6 +320,61 @@ def sorting_and_creating_a_list_of_distances_R(R_nodes_):
     # plt.show()
 
 
+def finding_root_node(graph, iter_):
+    dict_root = {}
+    dict_of_node_attributes = node_attributes_selection(graph, iter_)
+    df_plt = pd.DataFrame(dict_of_node_attributes)
+    unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
+    for id_clust in unique:
+        # Список узлов кластера id_clust
+        list_node_clust = []
+        for node in graph.nodes():
+            if graph.nodes[node]['claster_flag'] == id_clust:
+                list_node_clust.append(node)
+        
+        # Словарь узлов кластера с их bw. 
+        adj_ndoes_dict_clast = {}
+        # цикл по всем узлам и их смежностям
+        for nb, nbrs in graph.adj.items():
+            # если узел nb из числа узлов кластера id_clust
+            if nb in list_node_clust:
+                list_nrb = {}
+                for nrb, eattr in nbrs.items():
+                    # добавляем в словарь по ключу nb соседей этого узла
+                    list_nrb[nrb] =  eattr
+                adj_ndoes_dict_clast[nb] = list_nrb
+
+        # рассматриваемый узел  
+        for id_node in adj_ndoes_dict_clast:
+            # узел сравнения 
+            for id_node_2 in adj_ndoes_dict_clast:
+                if id_node != id_node_2:
+                    # если узел id_node имеет путь до id_node_2
+                    if id_node_2 not in adj_ndoes_dict_clast[id_node]:
+                        adj_ndoes_dict_clast[id_node][id_node_2] = {'weight': 100000}
+                else:
+                    adj_ndoes_dict_clast[id_node][id_node_2] = {'weight': 0}
+        # Матрица смежности подготовлена 
+
+        # Алгоритм
+        for i in adj_ndoes_dict_clast:
+            for node_1 in adj_ndoes_dict_clast:
+                for nbr in adj_ndoes_dict_clast[node_1]:
+                    if adj_ndoes_dict_clast[node_1][nbr]['weight'] > adj_ndoes_dict_clast[node_1][i]['weight'] + adj_ndoes_dict_clast[i][nbr]['weight']:
+                        adj_ndoes_dict_clast[node_1][nbr]['weight'] = adj_ndoes_dict_clast[node_1][i]['weight'] + adj_ndoes_dict_clast[i][nbr]['weight']
+        
+        for node_ in adj_ndoes_dict_clast:
+            eccentricity = 0
+            for nrb in adj_ndoes_dict_clast[node_]:
+                if adj_ndoes_dict_clast[node_][nrb]['weight'] != 100000:
+                    if eccentricity < adj_ndoes_dict_clast[node_][nrb]['weight']:
+                        eccentricity = adj_ndoes_dict_clast[node_][nrb]['weight']
+            
+        dict_root[id_clust] = {node_: eccentricity}
+        
+    # На данном этапе мы нашли все корневые точки Сети, по одной на кластер
+
+
 # __________Создание объекта граф______________________________________
 graph = nx.Graph()
 # координаты центров кластеров
@@ -322,13 +398,15 @@ while steps != 0:
     # print(dict_of_node_attributes)
 
     # ____________Отрисока сгенеренных узлов до обучения алгоса______________
-    # G = Plot(dict_of_node_attributes)
+    # G = Plot(graph, dict_of_node_attributes)
     # G.plot_graph()
 
     # ____________________Нахождение eps______________________________________
     # Словарь соседей для каждого узла
     dict_all_node_neighbors = finding_neighbors_of_nodes(
-        graph, visibility=200)
+        graph, visibility)
+    
+
 
     # #__________Подсчет средних расстояний________________
     R_nodes = сalculating_average_distances(graph, dict_all_node_neighbors, steps)
@@ -352,7 +430,7 @@ while steps != 0:
     # print(db_1.labels_)
 
     # ________________Отрисовка результатов первого прохода db___________
-    # G_12 = Plot(dict_of_node_attributes)
+    # G_12 = Plot(graph, dict_of_node_attributes)
     # G_12.painting_of_clasters(db_1.labels_)
 
     # _____________Добавление узлам меток кластера_______________
@@ -372,7 +450,7 @@ while steps != 0:
                           min_samples_=5, iter_=iter_)
 
     # _____________Отрисовка результатов второго прохода db_____
-    # G_22 = Plot(dict_of_node_attributes_2)
+    # G_22 = Plot(graph, dict_of_node_attributes_2)
     # G_22.painting_of_clasters(db_2.labels_)
 
     # _____________Добавление узлам меток кластера_______________
@@ -386,7 +464,8 @@ while steps != 0:
 
     iter_ = 0  # Закончили обучать db, обнулим iter_, чтобы отрисовывать можео было все точки
 
-    # shift_coord(graph)
+    # ___________Создание ребер между узлами___________________________________________
+    edge_generation(graph, dict_all_node_neighbors, bw, visibility)
 
     #____________График распределения кластеров после обучения DBSCAN__________________
     dict_of_node_attributes_3 = node_attributes_selection(graph, iter_)
@@ -402,11 +481,39 @@ while steps != 0:
 
 
     # if steps == 1:
-    #     G_2 = Plot(dict_of_node_attributes_3)
+    #     G_2 = Plot(graph, dict_of_node_attributes_3)
     #     G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
-    G_2 = Plot(dict_of_node_attributes_3)
-    G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
+    # G_2 = Plot(graph, dict_of_node_attributes_3)
+    # G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
+
+# ______________Отрисовка связей в графе___________________________
+    # fig = plt.figure()
+ 
+    # # syntax for 3-D projection
+    # ax = plt.axes(projection ='3d')
+
+    # iterat = 100
+    # for n, nbrs in graph.adj.items():
+    #     if iterat == 0:
+    #         break
+    #     for nbr, eattr in nbrs.items():
+    #         x1 = graph.nodes[n]['x']
+    #         x2 = graph.nodes[nbr]['x']
+    #         y1 = graph.nodes[n]['y']
+    #         y2 = graph.nodes[nbr]['y']
+    #         z1 = graph.nodes[n]['z']
+    #         z2 = graph.nodes[nbr]['z']
+    #         ax.plot([x1, x2], [y1, y2], [z1, z2], color='b')
+    #         iterat = iterat - 1
+    #         if iterat == 0:
+    #             break
+    # plt.show()
+# _____________Поиск root узлов в кластерах_____________________
+    finding_root_node(graph, iter_)
+# ____________________________________________________________
 
     shift_coord(graph, default_center_graphs)
 
     steps = steps - 1
+
+

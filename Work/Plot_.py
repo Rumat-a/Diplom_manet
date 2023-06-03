@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 
 class Plot:
-    def __init__(self, dict_of_node_attributes):
-        # self.__graph = graph # Мб пригодится в будущем
+    def __init__(self, graph,  dict_of_node_attributes):
+        self.__graph = graph # Мб пригодится в будущем
         self.__dict_of_node_attributes = dict_of_node_attributes
 
     def plot_graph(self):
@@ -32,6 +32,7 @@ class Plot:
 
         ax.scatter(x, y, z, c=cluster_colors, s=20)
 
+
         plt.title('Дефолт')
         plt.xlabel('Ось Х')
         plt.ylabel('Ось Y')
@@ -44,7 +45,6 @@ class Plot:
         x = self.__dict_of_node_attributes['x']
         y = self.__dict_of_node_attributes['y']
         z = self.__dict_of_node_attributes['z']
-        # ax.scatter(x, y, z, c=dbscan_label, s=20, cmap=plt.cm.Spectral)
 
         unique_clusters = set([cluster_flag for cluster_flag in dbscan_label if cluster_flag != -1])
         # Создаем палитру цветов с использованием уникальных значений кластеров
@@ -58,7 +58,7 @@ class Plot:
         # Получаем список цветов для каждого кластера
         cluster_colors = [cluster_color_dict[cluster_flag] for cluster_flag in dbscan_label]
 
-        ax.scatter(x, y, z, c=cluster_colors, s=20)      
+        ax.scatter(x, y, z, c=cluster_colors, s=20)     
 
         plt.title('Кластеризация узлов сети')
         plt.xlabel('Ось Х')
