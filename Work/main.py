@@ -38,13 +38,13 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
     # Генерация точек центров.
     def generating_center_nodes(graph_, number_of_center_nodes):
         node_list = []
-        default_center_graphs_list = []
         for id_node in range(number_of_center_nodes):
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node}))
-            default_center_graphs_[id_node] = {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node}
+            node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node, 'ID': 000}))
+            # default_center_graphs_ используется в сдвиге ущлов
+            default_center_graphs_[id_node] = {'x': x, 'y': y, 'z': z, 'claster_flag': -2, 'role': 'root', 'default_space': id_node, 'ID': 000}
         graph_.add_nodes_from(node_list)
 
 
@@ -68,7 +68,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl, 'ID': 000}))
                     id_node = id_node + 1
             else:
                 for i in range(number_of_nodes_in_the_cluster):
@@ -79,7 +79,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
                     x = x + random.uniform(-radius_obl, radius_obl)
                     y = y + random.uniform(-radius_obl, radius_obl)
                     z = z + random.uniform(-radius_obl, radius_obl)
-                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl}))
+                    node_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': node, 'role': 'node', 'default_space': node, 'radius_obl': radius_obl, 'ID': 000}))
                     id_node = id_node + 1
         graph_.add_nodes_from(node_list)
 
@@ -91,7 +91,7 @@ def node_generation(graph_, number_of_center_nodes, number_of_nodes_in_the_clust
             x = random.uniform(0, 1000)
             y = random.uniform(0, 1000)
             z = random.uniform(0, 1000)
-            noice_nodes_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -1, 'role': 'noiz', 'default_space': -1}))
+            noice_nodes_list.append((id_node, {'x': x, 'y': y, 'z': z, 'claster_flag': -1, 'role': 'noiz', 'default_space': -1, 'ID': 000}))
             id_node = id_node + 1
         graph_.add_nodes_from(noice_nodes_list)
 
@@ -322,6 +322,7 @@ def sorting_and_creating_a_list_of_distances_R(R_nodes_):
 
 def finding_root_node(graph, iter_):
     dict_root = {}
+    adj_ndoes_dict_clasters = {}
     dict_of_node_attributes = node_attributes_selection(graph, iter_)
     df_plt = pd.DataFrame(dict_of_node_attributes)
     unique, counts = np.unique(df_plt['claster_flag'], return_counts=True)
@@ -332,6 +333,7 @@ def finding_root_node(graph, iter_):
             if graph.nodes[node]['claster_flag'] == id_clust:
                 list_node_clust.append(node)
         
+        # Создает и заполняет словарь смежности узлов
         # Словарь узлов кластера с их bw. 
         adj_ndoes_dict_clast = {}
         # цикл по всем узлам и их смежностям
@@ -344,19 +346,22 @@ def finding_root_node(graph, iter_):
                     list_nrb[nrb] =  eattr
                 adj_ndoes_dict_clast[nb] = list_nrb
 
+        # Заполнение пустых путей словаря(матрицы смежности) нулями и бесконечностями 
         # рассматриваемый узел  
         for id_node in adj_ndoes_dict_clast:
             # узел сравнения 
             for id_node_2 in adj_ndoes_dict_clast:
                 if id_node != id_node_2:
-                    # если узел id_node имеет путь до id_node_2
+                    # если узел id_node не имеет пути до id_node_2
                     if id_node_2 not in adj_ndoes_dict_clast[id_node]:
                         adj_ndoes_dict_clast[id_node][id_node_2] = {'weight': 100000}
                 else:
                     adj_ndoes_dict_clast[id_node][id_node_2] = {'weight': 0}
         # Матрица смежности подготовлена 
 
-        # Алгоритм
+        adj_ndoes_dict_clasters[id_clust] = adj_ndoes_dict_clast
+
+        # Алгоритм Флойда-Уоршела
         for i in adj_ndoes_dict_clast:
             for node_1 in adj_ndoes_dict_clast:
                 for nbr in adj_ndoes_dict_clast[node_1]:
@@ -369,10 +374,21 @@ def finding_root_node(graph, iter_):
                 if adj_ndoes_dict_clast[node_][nrb]['weight'] != 100000:
                     if eccentricity < adj_ndoes_dict_clast[node_][nrb]['weight']:
                         eccentricity = adj_ndoes_dict_clast[node_][nrb]['weight']
-            
-        dict_root[id_clust] = {node_: eccentricity}
+            if id_clust in dict_root:
+                for i in dict_root[id_clust]:
+                    if dict_root[id_clust][i] > eccentricity:
+                        dict_root[id_clust] = {node_: eccentricity}
+            else:
+                dict_root[id_clust] = {node_: eccentricity}
         
     # На данном этапе мы нашли все корневые точки Сети, по одной на кластер
+    return dict_root, adj_ndoes_dict_clasters
+
+
+def assignment_of_identifiers(graph):
+    'Присвоение idшников узлам'
+    for node in graph.nodes():
+        graph.nodes[node]['ID'] = {'clust_id': graph.nodes[node]['claster_flag'], 'node_id': node}
 
 
 # __________Создание объекта граф______________________________________
@@ -445,7 +461,7 @@ while steps != 0:
     nparr_atr_nodes_2 = np.array(df_2)
     # print(nparr_atr_nodes_2)
 
-    # ________обучение ____________
+    # ________обучение ________________________________________
     db_2, iter_ = learndb(nparr_atr_nodes_2, eps_=120,
                           min_samples_=5, iter_=iter_)
 
@@ -463,6 +479,9 @@ while steps != 0:
                          [id_node]]['claster_flag'] = label
 
     iter_ = 0  # Закончили обучать db, обнулим iter_, чтобы отрисовывать можео было все точки
+
+    # ____________Присвоение ID шников узлам_______________________________________
+    assignment_of_identifiers(graph)
 
     # ___________Создание ребер между узлами___________________________________________
     edge_generation(graph, dict_all_node_neighbors, bw, visibility)
@@ -486,7 +505,7 @@ while steps != 0:
     # G_2 = Plot(graph, dict_of_node_attributes_3)
     # G_2.painting_of_clasters(dict_of_node_attributes_3['claster_flag'])
 
-# ______________Отрисовка связей в графе___________________________
+    # ______________Отрисовка связей в графе (необязательная штука)___________________________
     # fig = plt.figure()
  
     # # syntax for 3-D projection
@@ -508,12 +527,18 @@ while steps != 0:
     #         if iterat == 0:
     #             break
     # plt.show()
-# _____________Поиск root узлов в кластерах_____________________
-    finding_root_node(graph, iter_)
-# ____________________________________________________________
+    # _____________Поиск root узлов в кластерах_____________________
+    
+    dict_root_node, adj_ndoes_dict_clasters = finding_root_node(graph, iter_)
+
+    G_root = Plot(graph, dict_of_node_attributes_3)
+    G_root.plot_root_nodes(dict_root_node, dict_of_node_attributes_3['claster_flag'])
+    # ____________________________________________________________
 
     shift_coord(graph, default_center_graphs)
+    # Очистка смежности графа
+    for node in graph.nodes:
+        edges_to_remove = list(graph.edges(node))
+        graph.remove_edges_from(edges_to_remove)
 
     steps = steps - 1
-
-
